@@ -1,0 +1,168 @@
+#!/bin/bash
+# set -e
+
+# Author            : Eshan Roy <eshan@snigdhaos.or>
+# Author URL        : https://eshanized.github.io/
+
+echo
+echo "--->> Start snigdhaos-virtual-machine-check <<---"
+echo
+
+result=$(systemd-detect-virt)
+
+# First remove the db.lck
+
+while [ -e "/var/lib/pacman/db.lck" ];
+do
+    echo 'Pacman is not ready yet. Trying in 10 Seconds.'
+    seconds=$(($seconds + 5))
+    sleep 5
+    if [[ "$seconds" == "30" ]]; then
+        echo "Snigdha OS Removing Pacman db.lck!"
+        rm /var/lib/pacman/db.lck
+    fi
+done
+
+echo
+echo "You Are On : "$result
+echo
+
+if [[ $result == "oracle" ]]; then
+    # removing pre-installed vmware
+    if [ -f /etc/xdg/autostart/vmware-user.desktop ]; then
+        rm /etc/xdg/autostart/vmware-user.desktop
+        echo "[REMOVED] vmware-user.desktop"
+    fi
+
+    if pacman -Qi open-vm-tools &> /dev/null; then
+        systemctl disable vmware-vmblock-fuse.service
+        systemctl disable vmtoolsd.service
+        echo "[DISABLE] vmtoolsd.service"
+        pacman -Rns open-vm-tools --noconfirm
+        echo "[REMOVED] open-vm-tools"
+    fi
+
+    if pacman -Qi xf86-video-vmware &> /dev/null; then
+        pacman -Rns xf86-video-vmware --noconfirm
+        echo "[REMOVED] xf86-video-vmware"
+    fi
+
+    if [ -f /etc/systemd/system/multi-user.target.wants/vmtoolsd.service ]; then
+        rm /etc/systemd/system/multi-user.target.wants/vmtoolsd.service
+        echo "[REMOVED] vmtoolsd.service"
+    fi
+
+    if pacman -Qi qemu-guest-agent &> /dev/null; then
+        systemctl disable qemu-guest-agent.service
+        pacman -Rns qemu-guest-agent --noconfirm
+        echo "[REMOVED] qemu-guest-agent"
+    fi
+fi
+
+if [ $result == "kvm" ]; then
+    if [ -f /etc/xdg/autostart/vmware-user.desktop ]; then
+        rm /etc/xdg/autostart/vmware-user.desktop
+        echo "[REMOVED] vmware-user.desktop"
+    fi
+
+    if pacman -Qi open-vm-tools &> /dev/null; then
+        systemctl disable vmware-vmblock-fuse.service
+        systemctl disable vmtoolsd.service
+        echo "[DISABLE] vmtoolsd.service"
+        pacman -Rns open-vm-tools --noconfirm
+        echo "[REMOVED] open-vm-tools"
+    fi
+
+    if pacman -Qi xf86-video-vmware &> /dev/null; then
+        pacman -Rns xf86-video-vmware --noconfirm
+        echo "[REMOVED] xf86-video-vmware"
+    fi
+
+    if pacman -Qi virtualbox-guest-utils &> /dev/null; then
+        systemctl disable vboxservice.service
+        pacman -Rns virtualbox-guest-utils --noconfirm
+        echo "[REMOVED] virtualbox-guest-utils"
+    fi
+
+    if pacman -Qi virtualbox-guest-utils-nox &> /dev/null; then
+        systemctl disable vboxservice.service
+        pacman -Rns virtualbox-guest-utils-nox --noconfirm
+        echo "[REMOVED] virtualbox-guest-utils-nox"
+    fi
+fi
+
+if [ $result == "vmware" ]; then
+    if pacman -Qi virtualbox-guest-utils &> /dev/null; then
+        systemctl disable vboxservice.service
+        pacman -Rns virtualbox-guest-utils --noconfirm
+        echo "[REMOVED] virtualbox-guest-utils"
+    fi
+
+    if pacman -Qi virtualbox-guest-utils-nox &> /dev/null; then
+        systemctl disable vboxservice.service
+        pacman -Rns virtualbox-guest-utils-nox --noconfirm
+        echo "[REMOVED] virtualbox-guest-utils-nox"
+    fi
+
+    if pacman -Qi qemu-guest-agent &> /dev/null; then
+        systemctl disable qemu-guest-agent.service
+        pacman -Rns qemu-guest-agent --noconfirm
+        echo "[REMOVED] qemu-guest-agent"
+    fi
+fi
+
+if [ $result == "none" ]; then
+    if pacman -Qi virtualbox-guest-utils &> /dev/null; then
+        systemctl disable vboxservice.service
+        pacman -Rns virtualbox-guest-utils --noconfirm
+        echo "[REMOVED] virtualbox-guest-utils"
+    fi
+
+    if pacman -Qi virtualbox-guest-utils-nox &> /dev/null; then
+        systemctl disable vboxservice.service
+        pacman -Rns virtualbox-guest-utils-nox --noconfirm
+        echo "[REMOVED] virtualbox-guest-utils-nox"
+    fi
+
+    if pacman -Qi qemu-guest-agent &> /dev/null; then
+        systemctl disable qemu-guest-agent.service
+        pacman -Rns qemu-guest-agent --noconfirm
+        echo "[REMOVED] qemu-guest-agent"
+    fi
+
+    if [ -f /etc/xdg/autostart/vmware-user.desktop ]; then
+        rm /etc/xdg/autostart/vmware-user.desktop
+        echo "[REMOVED] vmware-user.desktop"
+    fi
+
+    if pacman -Qi open-vm-tools &> /dev/null; then
+        systemctl disable vmware-vmblock-fuse.service
+        systemctl disable vmtoolsd.service
+        echo "[DISABLE] vmtoolsd.service"
+        pacman -Rns open-vm-tools --noconfirm
+        echo "[REMOVED] open-vm-tools"
+    fi
+
+    if pacman -Qi xf86-video-vmware &> /dev/null; then
+        pacman -Rns xf86-video-vmware --noconfirm
+        echo "[REMOVED] xf86-video-vmware"
+    fi
+
+    if [ -f /etc/systemd/system/multi-user.target.wants/vmtoolsd.service ]; then
+        rm /etc/systemd/system/multi-user.target.wants/vmtoolsd.service
+        echo "[REMOVED] vmtoolsd.service"
+    fi
+
+    if [ -f /usr/local/bin/snigdhaos-virtual-machine-check ]; then
+        rm /usr/local/bin/snigdhaos-virtual-machine-check
+        echo "[REMOVED] /usr/local/bin/snigdhaos-virtual-machine-check"
+    fi
+
+    if [ -f /etc/systemd/system/multi-user.target.wants/virtual-machine-check.service ]; then
+        rm /etc/systemd/system/multi-user.target.wants/virtual-machine-check.service
+        echo "[REMOVED] AVM-Check Script"
+    fi
+fi
+echo
+echo "--->> End snigdhaos-virtual-machine-check <<---"
+echo
