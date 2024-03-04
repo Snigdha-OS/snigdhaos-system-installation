@@ -54,4 +54,29 @@ fi
 # freenonouveau = remove nvidia-dkms and nouveau
 
 if [[ $selection == "freenonouveau" ]]; then
-    
+    echo
+    echo "Removing nvidia-dkms, nonouveau..."
+    echo
+    pacman -Rns --noconfirm nvidia-dkms nvidia-utils nvidia-settings egl-wayland xf86-video-nouveau
+    cp /etc/calamares/settings-advanced-no-nvidia.conf /etc/calamares/settings-advanced.conf
+fi
+
+# nonfree = keep nvidia and nonouveau
+if [[ $selection == "nonfree" ]]; then
+    echo
+    echo "Keep nvidia and nonouveau"
+    echo
+fi
+
+# nonfreenonouveau = keep nvidia-dkms only
+
+if [[ $selection == "nonfreenonouveau" ]]; then
+    echo
+    echo "Keep nvidia-dkms; removing nonouveau"
+    echo
+    pacman -Rns --noconfirm xf86-video-nouveau
+fi
+
+echo
+echo "--->> End snigdhaos-fixes <<---"
+echo
