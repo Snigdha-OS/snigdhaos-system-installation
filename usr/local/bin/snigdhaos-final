@@ -49,3 +49,25 @@ rm -fv /etc/sudoers.d/g_wheel
 rm -fv /etc/polkit-1/rules.d/49-nopasswd_global.rules
 rm -v /root/{.automated_script.sh,.zlogin}
 mv -v /etc/snigdhaos-release /etc/lsb-release
+
+# If you are using systemd-boot
+if [ -f /boot/efi/loader/loader.conf ]; then
+    echo "Installing kernel-install-mkinitcpio..."
+    pacman -U --noconfirm /ur/local/bin/kernel-install-mkinitcpio-*-any.pkg.tar.zst
+fi
+
+echo
+echo "Root Permission"
+echo
+
+chmod -v 700 /root
+
+echo
+echo "Snigdha OS Virtual-Machine-Check"
+echo
+
+/usr/local/bin/snigdhaos-virtual-machine-check
+
+echo
+echo "End!!!"
+echo
