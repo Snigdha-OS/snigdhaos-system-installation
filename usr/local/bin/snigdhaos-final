@@ -1,0 +1,51 @@
+#!/bin/bash
+# set -e
+
+# Author            : Eshan Roy <eshan@snigdhaos.or>
+# Author URL        : https://eshanized.github.io/
+
+echo
+echo "--->> Start snigdhaos-final <<---"
+echo
+
+echo
+echo "Permissions..."
+echo
+
+chmod 750 /etc/sudoers.d
+chmod 750 /etc/polkit-1/rules.d
+chgrm polkitd /etc/polkit-1/rules.d
+
+echo
+echo "[Copy] /etc/skel -> /root"
+echo
+
+cp -aT /etc/skel/ /root/
+
+echo
+echo "Cleanup autologin"
+echo
+
+rm -rfv /etc/systemd/system/getty@tty1.service.d
+
+echo
+echo "Setting editor -> nano"
+echo
+
+"EDITOR=nano" >> /etc/profile
+
+echo
+echo "Enhance Bluetooth..."
+echo
+
+sed -i "s/#AutoEnable=false/AutoEnable=true/g" /etc/bluetooth/main.conf
+echo 'load-module module-switch-on-connect' | sudo tee --append /etc/pulse/default.pa
+
+echo
+echo "Cleanup original files..."
+echo
+
+rm -fv /etc/sudoers.d/g_wheel
+rm -fv /etc/polkit-1/rules.d/49-nopasswd_global.rules
+rm -v /root/{.automated_script.sh,.zlogin}
+mv -v /etc/snigdhaos-release /etc/lsb-release
