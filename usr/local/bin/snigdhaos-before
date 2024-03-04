@@ -9,3 +9,25 @@ echo
 echo "--->> Start snigdhaos-before <<---"
 echo
 
+echo
+echo "Populating Develoer Keys..."
+echo
+
+pacman-key --init
+pacman-key --populate snigdhaos
+pacman-key --populate archlinux
+pacman-key --populate chaotic
+echo
+
+if [ ! -f /tmp/systemd-boot ]; then
+    echo "Copy Snigdha OS Grub Theme..."
+    mkdir -p /boot/grub/themes
+    cp -Rf /usr/share/grub/themes/snigdhaos-grub-theme /boot/grub/themes/
+fi
+
+echo
+echo "Setting Snigdha OS Arctic Preset..."
+mv -v /etc/mkinitcpio.d/snigdhaos /etc/mkinitcpio.d/linux.preset
+echo
+echo "--->> End snigdhaos-before <<---" 
+echo
