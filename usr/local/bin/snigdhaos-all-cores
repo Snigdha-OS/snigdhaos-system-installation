@@ -1,0 +1,16 @@
+#!bin/bash
+set -e
+
+# Author            : Eshan Roy <eshan@snigdhaos.or>
+# Author URL        : https://eshanized.github.io/
+
+echo
+echo "--->> Start snigdhaos-all-cores <<---"
+echo
+
+numberofcores=$(grep -c ^processor /proc/cpuinfo)
+
+if [ $numberofcores -gt 1 ]; then
+    echo "TOTAL CORES : "$numberofcores
+    echo "Changing makeflags for "$numberofcores "cores."
+    sudo sed -i ''
