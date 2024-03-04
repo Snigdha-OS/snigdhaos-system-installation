@@ -29,4 +29,24 @@ case $desktop in
     echo "Nothing To Do!!!"
 esac
 
+if [ -f /usr/bin/gnome-session ]; then
+    echo "INSTALLED: GDM [STATUS: ACTIVE]"
+    pacman -S sddm --noconfirm --needed
+    systemctl enable sddm.service -f
+fi
 
+if [ -f /usr/bin/startdde ]; then
+    echo "INSTALLED: LightDM [STATUS: ACTIVE]"
+    pacman -S sddm --noconfirm --needed
+    systemctl enable sddm.service -f
+fi 
+
+if [ -f /usr/bin/ukui-session ]; then
+    echo "INSTALLED: LightDM [STATUS: ACTIVE]"
+    pacman -S sddm --noconfirm --needed
+    systemctl enable sddm.service -f
+fi
+
+echo
+echo "--->> End snigdhaos-fixes <<---"
+echo
