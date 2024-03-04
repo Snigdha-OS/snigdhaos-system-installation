@@ -1,0 +1,11 @@
+#!/bin/bash
+#!bin/bash
+set -e
+
+# Author            : Eshan Roy <eshan@snigdhaos.or>
+# Author URL        : https://eshanized.github.io/
+
+echo
+echo "--->> Start snigdhaos-before <<---"
+echo
+
