@@ -1,6 +1,5 @@
 #!/bin/bash
-#!bin/bash
-set -e
+# set -e
 
 # Author            : Eshan Roy <eshan@snigdhaos.or>
 # Author URL        : https://eshanized.github.io/
@@ -10,7 +9,7 @@ echo "--->> Start snigdhaos-before <<---"
 echo
 
 echo
-echo "Populating Develoer Keys..."
+echo "Populating Developer Keys..."
 echo
 
 pacman-key --init
