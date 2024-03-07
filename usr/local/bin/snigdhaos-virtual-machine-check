@@ -15,6 +15,7 @@ result=$(systemd-detect-virt)
 while [ -e "/var/lib/pacman/db.lck" ];
 do
     echo 'Pacman is not ready yet. Trying in 10 Seconds.'
+    # shellcheck disable=SC2004
     seconds=$(($seconds + 5))
     sleep 5
     if [[ "$seconds" == "30" ]]; then
@@ -24,6 +25,7 @@ do
 done
 
 echo
+# shellcheck disable=SC2086
 echo "You Are On : "$result
 echo
 
