@@ -8,7 +8,8 @@ echo
 echo "--->> Start snigdhaos-fixes <<---"
 echo
 
-kernel_cmdline(){
+kernel_cmdline() {
+    # shellcheck disable=SC2013
     for param in $(cat /proc/cmdline); do
         case "${param}" in
             $1=*) echo "${param##*=}"; return 0 ;;
@@ -16,11 +17,13 @@ kernel_cmdline(){
             *) continue ;;
         esac
     done
-    [ -n "${2}" ] echo "${2}"
+    [ -n "${2}" ] && echo "${2}"
     return 1
 }
 
 get_driver(){
+    # shellcheck disable=SC2005
+    # shellcheck disable=SC2046
     echo $(kernel_cmdline driver)
 }
 
@@ -38,6 +41,7 @@ done
 selection=$(get_driver)
 
 echo
+# shellcheck disable=SC2086
 echo "Your Selection : "$selection
 echo
 

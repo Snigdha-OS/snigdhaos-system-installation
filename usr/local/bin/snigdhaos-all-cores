@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 set -e
 
 # Author            : Eshan Roy <eshan@snigdhaos.or>
@@ -10,6 +10,7 @@ echo
 
 numberofcores=$(grep -c ^processor /proc/cpuinfo)
 
+# shellcheck disable=SC2086
 if [ $numberofcores -gt 1 ]; then
     echo "TOTAL CORES : "$numberofcores
     echo "Changing makeflags for "$numberofcores "cores."
