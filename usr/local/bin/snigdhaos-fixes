@@ -10,6 +10,7 @@ echo
 
 desktop=$(ls /usr/share/xsessions/)
 echo
+# shellcheck disable=SC2086
 echo "Your Current Desktop: "$desktop
 echo
 
