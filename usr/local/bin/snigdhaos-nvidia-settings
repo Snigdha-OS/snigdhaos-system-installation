@@ -6,6 +6,7 @@ echo
 if [ -f /usr/share/waland-sessions/gnome-wayland.desktop ]; then
     if pacman -Qi nvidia-dkms &> /dev/null; then
         echo
+        # shellcheck disable=SC2154
         echo "[Check] $package is installed!"
         echo
 
