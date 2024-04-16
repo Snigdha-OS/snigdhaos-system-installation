@@ -74,7 +74,7 @@ if [ -f /usr/share/waland-sessions/gnome-wayland.desktop ]; then
             echo "grub" | dd of="/bootloader"
         fi
 
-        if [ -d /boot/efi/loader/entries/]; then
+        if [ -d /boot/efi/loader/entries/ ]; then
             echo 
             echo "Removing nvidia-drm.modset=1"
             echo
