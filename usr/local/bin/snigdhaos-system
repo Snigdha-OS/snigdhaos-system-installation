@@ -1,1 +1,70 @@
 #!/bin/bash
+echo
+echo "Changing Permissions..."
+echo 
+
+chmod 750 /etc/sudoers.d
+chmod 750 /etc/polkit-1/rules.d
+chgrp polkitd /etc/polkit-1/rules.d
+
+echo
+echo "Changed Permissions..."
+echo 
+
+echo
+echo "Copying /skel to /root..."
+echo 
+
+cp -aT /etc/skel/ /root/
+
+echo
+echo "Copied /skel to /root..."
+echo 
+
+echo
+echo "Removing Autologin..."
+echo 
+
+rm -rfv /etc/systemd/system/getty@tty1.service.d
+
+echo
+echo "Removed Autologin..."
+echo 
+
+echo
+echo "Fixing Bluetooth..."
+echo
+
+sed -i "s/#AutoEnable=false/AutoEnable=true/g" /etc/bluetooth/main.conf
+echo 'load-module module-switch-on-connect' | tee --append /etc/pulse/default.pa
+
+echo
+echo "Fixed Bluetooth..."
+echo
+
+echo
+echo "Working on Snigdha OS Config..."
+echo
+
+rm -fv /etc/sudoers.d/g_wheel
+rm -fv /etc/polkit-1/rules.d/49-nopasswd_global.rules
+rm -v /root/{.automated_script.sh,.zlogin}
+mv -v /etc/snigdhaos-release /etc/lsb-release
+
+echo
+echo "Completed working on Snigdha OS Config..."
+echo
+
+echo
+echo "Change root permission..."
+echo
+
+chmod -v 700 /root
+
+echo
+echo "Changed root permission..."
+echo
+
+echo
+echo "Task Completed!"
+echo
