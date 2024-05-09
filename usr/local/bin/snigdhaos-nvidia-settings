@@ -4,7 +4,7 @@ echo "Start Snigdha OS Nvidia Settings"
 echo
 
 if [ -f /usr/share/waland-sessions/gnome-wayland.desktop ]; then
-    if pacman -Qi nvidia-dkms &> /dev/null; then
+    if pacman -Qq | grep -q "^nvidia"; then
         echo
         # shellcheck disable=SC2154
         echo "[Check] $package is installed!"
