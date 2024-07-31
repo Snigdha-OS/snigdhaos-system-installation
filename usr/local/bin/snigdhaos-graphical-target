@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -e
+set -e
 
 # Author            : Eshan Roy <eshan@snigdhaos.or>
 # Author URL        : https://eshanized.github.io/
@@ -8,78 +8,63 @@ echo
 echo "--->> Start snigdhaos-fixes <<---"
 echo
 
-kernel_cmdline() {
-    # shellcheck disable=SC2013
-    for param in $(cat /proc/cmdline); do
-        case "${param}" in
-            $1=*) echo "${param##*=}"; return 0 ;;
-            $1) return 0 ;;
-            *) continue ;;
-        esac
+get_kernel_param() {
+    local param=$1
+    local default=$2
+    local value
+
+    value=$(cat /proc/cmdline | tr ' ' '\n' | grep "^${param}=" | cut -d '=' -f 2-)
+    echo "${value:-${default}}"
+}
+
+get_driver() {
+    get_kernel_param driver
+}
+
+wait_for_pacman() {
+    local timeout=30
+    local interval=5
+
+    while [ -e "/var/lib/pacman/db.lck" ]; do
+        echo "Pacman is not ready yet. Trying in ${interval} seconds."
+        sleep ${interval}
+        ((timeout -= interval))
+        if ((timeout <= 0)); then
+            echo "Snigdha OS Removing Pacman db.lck!"
+            rm /var/lib/pacman/db.lck
+        fi
     done
-    [ -n "${2}" ] && echo "${2}"
-    return 1
 }
-
-get_driver(){
-    # shellcheck disable=SC2005
-    # shellcheck disable=SC2046
-    echo $(kernel_cmdline driver)
-}
-
-while [ -e "/var/lib/pacman/db.lck" ];
-do
-    echo 'Pacman is not ready yet. Trying in 10 Seconds.'
-    seconds=$(($seconds + 5))
-    sleep 5
-    if [[ "$seconds" == "30" ]]; then
-        echo "Snigdha OS Removing Pacman db.lck!"
-        rm /var/lib/pacman/db.lck
-    fi
-done
 
 selection=$(get_driver)
 
 echo
-# shellcheck disable=SC2086
-echo "Your Selection : "$selection
+echo "Your Selection: ${selection}"
 echo
 
-# free = remove nvidia-dkms keep nouveau
-
-if [[ $selection == "free" ]]; then
-    echo
-    echo "Removing nvidia-dkms..."
-    echo
-    pacman -Rns --noconfirm nvidia-dkms nvidia-utils nvidia-settings egl-wayland
-    cp /etc/calamares/settings-advanced-no-nvidia.conf /etc/calamares/settings-advanced.conf
-fi
-
-# freenonouveau = remove nvidia-dkms and nouveau
-
-if [[ $selection == "freenonouveau" ]]; then
-    echo
-    echo "Removing nvidia-dkms, nonouveau..."
-    echo
-    pacman -Rns --noconfirm nvidia-dkms nvidia-utils nvidia-settings egl-wayland xf86-video-nouveau
-    cp /etc/calamares/settings-advanced-no-nvidia.conf /etc/calamares/settings-advanced.conf
-fi
-
-# nonfree = keep nvidia and nonouveau
-if [[ $selection == "nonfree" ]]; then
-    echo
-    echo "Keep nvidia and nonouveau"
-    echo
-fi
-
-# nonfreenonouveau = keep nvidia-dkms only
-
-if [[ $selection == "nonfreenonouveau" ]]; then
-    echo
-    echo "Keep nvidia-dkms; removing nonouveau"
-    echo
-    pacman -Rns --noconfirm xf86-video-nouveau
-fi
+case ${selection} in
+    free)
+        echo "Removing nvidia-dkms..."
+        pacman -Rns --noconfirm nvidia-dkms nvidia-utils nvidia-settings egl-wayland
+        cp /etc/calamares/settings-advanced-no-nvidia.conf /etc/calamares/settings-advanced.conf
+        ;;
+    freenonouveau)
+        echo "Removing nvidia-dkms, nonouveau..."
+        pacman -Rns --noconfirm nvidia-dkms nvidia-utils nvidia-settings egl-wayland xf86-video-nouveau
+        cp /etc/calamares/settings-advanced-no-nvidia.conf /etc/calamares/settings-advanced.conf
+        ;;
+    nonfree)
+        echo "Keep nvidia and nonouveau"
+        ;;
+    nonfreenonouveau)
+        echo "Keep nvidia-dkms; removing nonouveau"
+        pacman -Rns --noconfirm xf86-video-nouveau
+        ;;
+    *)
+        echo "Invalid selection: ${selection}"
+        exit 1
+        ;;
+esac
 
 echo
 echo "--->> End snigdhaos-fixes <<---"
