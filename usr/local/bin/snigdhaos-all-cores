@@ -5,25 +5,24 @@ set -e
 # Author URL        : https://eshanized.github.io/
 
 echo
-echo "--->> Start snigdhaos-all-cores <<---"
+echo "Starting Execution..."
 echo
 
-numberofcores=$(grep -c ^processor /proc/cpuinfo)
+numberofcores=$(nproc)
 
-# shellcheck disable=SC2086
-if [ $numberofcores -gt 1 ]; then
-    echo "TOTAL CORES : "$numberofcores
-    echo "Changing makeflags for "$numberofcores "cores."
-    sudo sed -i 's/#MAKEFLAGS="-j2" /MAKEFLAGS="-j'$((numberofcores+1))'"/g' /etc/makepkg.conf
+if (( numberofcores > 1 )); then
+    echo "TOTAL CORES : $numberofcores"
+    echo "Changing makeflags for $numberofcores cores."
+    sudo sed -i "/^MAKEFLAGS=/c\MAKEFLAGS=\"-j$((numberofcores+1))\"" /etc/makepkg.conf
     echo "Changing Compression..."
     sudo sed -i 's/COMPRESSXZ=(xz -c -z -)/COMPRESSXZ=(xz -c -z --threads=0 -)/g' /etc/makepkg.conf
     sudo sed -i 's/COMPRESSZST=(zstd -c -z -)/COMPRESSZST=(zstd -c -z --threads=0 -)/g' /etc/makepkg.conf
     echo "Changing Default PKGEXT"
-    sudo sed -i "s/PKGEXT='.pkg.tar.xz'/PKGEXT='.pkg.tar.zst'/g" /etc/makepkg.conf
+    sudo sed -i 's/PKGEXT=.pkg.tar.xz/PKGEXT=.pkg.tar.zst/g' /etc/makepkg.conf
 else
     echo "Nothing Changed!"
 fi
 
 echo
-echo "---> End snigdhaos-all-cores <---"
+echo "End Execution!"
 echo
