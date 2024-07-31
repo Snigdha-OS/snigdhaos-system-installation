@@ -1,104 +1,68 @@
 #!/bin/bash
-echo
-echo "Start Snigdha OS Nvidia Settings"
-echo
 
-if [ -f /usr/share/waland-sessions/gnome-wayland.desktop ]; then
-    if pacman -Qq | grep -q "^nvidia"; then
-        echo
-        # shellcheck disable=SC2154
-        echo "[Check] $package is installed!"
-        echo
+# Define constants
+MKINITCPIO_CONF="/etc/mkinitcpio.conf"
+GRUB_DEFAULT="/etc/default/grub"
+GRUB_CFG="/boot/grub/grub.cfg"
+BOOTLOADER="/bootloader"
+EFI_DIR="/boot/efi"
+LOADER_ENTRIES_DIR="/boot/efi/loader/entries/"
 
-        FIND='MODULES=""'
-        REPLACE='MODULES="nvidia nvidia_modset nvidia_uvm nvidia_drm"'
-        sed -i "s/$FIND/$REPLACE/g" /etc/mkinitcpio.conf
-
-        if [ -f /etc/default/grub ]; then
-            if ! grep -q "nvidia-drm.modset=1" /etc/default/grub; then
-                echo
-                echo "Adding Option nvidia-drm.modset=1"
-                echo
-                sed -i "/^GRUB_CMDLINE_LINUX_DEFAULT=/s/'$/ nvidia-drm.modset=1'/" /etc/default/grub
-            fi
-
-            echo 
-            echo "Starting mkinitcpio -P"
-            echo
-            mkinitcpio -P
-            echo
-            echo "Updting Grub"
-            echo
-            grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=SnigdhaOS
-            grub-mkconfig -o /boot/grub/grub.cfg
-
-            echo "Writing grub -> /bootloader"
-            echo "grub" | dd of="/bootloader"
-        fi
-
-        if pacman -Qi snigdhaos-bootloader-systemd &> /dev/null; then
-            echo
-            echo "Adding Option nvidia-drm.modset=1"
-            echo
-
-            EMPTY_DIR="/boot/efi/loader/entries/"
-            PARAM="nvidia-drm.modset=1"
-            for i in "$EMPTY_DIR"*.conf; do
-                if grep -q "nvidia-drm.modset=1" "$i"; then
-                    echo
-                    echo "Parameters set"
-                    echo
-                else
-                    sed -i "^/options / s/options /&$PARAM /" "$i"
-                    echo
-                    echo "Adding Parameters"
-                    echo
-                fi
-            done
-        fi
-
-        if [ -f /etc/default/grub ]; then
-            echo
-            echo "Removing nvidia-drm.modset=1"
-            echo
-            if grep -q "nvidia-drm.modset=1" /etc/default/grub; then
-                sed -i "s/ nvidia-drm.modset=1//" /etc/default/grub
-                echo "Removed nvidia-drm.modset=1"
-                grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=SnigdhaOS
-                grub-mkconfig -o /boot/grub/grub.cfg
-            else
-                echo
-                echo "nvidia-drm.modset=1 not found!"
-                echo
-            fi
-            echo "Writing grub -> /bootloader"
-            echo "grub" | dd of="/bootloader"
-        fi
-
-        if [ -d /boot/efi/loader/entries/ ]; then
-            echo 
-            echo "Removing nvidia-drm.modset=1"
-            echo
-            EMPTY_DIR="/boot/efi/loader/entries/"
-            PARAM="nvidia-drm.modset=1"
-            for i in "$EMPTY_DIR"*.conf; do
-                if grep -q "$PARAM" "$i"; then
-                    sed -i "s/ $PARAM//" "$i"
-                    echo
-                    echo "Removed Parameter"
-                    echo
-                else
-                    echo
-                    echo "nvidia-drm.modset=1 not found!"
-                    echo
-                fi
-            done
-            echo "Writing grub -> /bootloader"
-            echo "grub" | dd of="/bootloader"
-        fi
-    fi
+# Check if required files exist
+if [ ! -f "$MKINITCPIO_CONF" ] || [ ! -f "$GRUB_DEFAULT" ]; then
+  echo "Required files not found. Exiting."
+  exit 1
 fi
 
-echo
+# Check if NVIDIA driver is installed
+if ! pacman -Qq | grep -q "^nvidia"; then
+  echo "NVIDIA driver not installed. Exiting."
+  exit 1
+fi
+
+# Update mkinitcpio.conf
+FIND='MODULES=""'
+REPLACE='MODULES="nvidia nvidia_modset nvidia_uvm nvidia_drm"'
+sed -i "s/$FIND/$REPLACE/g" "$MKINITCPIO_CONF"
+
+# Update GRUB settings
+if ! grep -q "nvidia-drm.modset=1" "$GRUB_DEFAULT"; then
+  sed -i "/^GRUB_CMDLINE_LINUX_DEFAULT=/s/'$/ nvidia-drm.modset=1'/" "$GRUB_DEFAULT"
+fi
+
+# Run mkinitcpio and update GRUB
+mkinitcpio -P
+grub-install --target=x86_64-efi --efi-directory="$EFI_DIR" --bootloader-id=SnigdhaOS
+grub-mkconfig -o "$GRUB_CFG"
+
+# Update systemd-boot settings (if installed)
+if pacman -Qi snigdhaos-bootloader-systemd &> /dev/null; then
+  PARAM="nvidia-drm.modset=1"
+  for file in "$LOADER_ENTRIES_DIR"*.conf; do
+    if ! grep -q "$PARAM" "$file"; then
+      sed -i "^/options / s/options /&$PARAM /" "$file"
+    fi
+  done
+fi
+
+# Remove nvidia-drm.modset=1 from GRUB settings
+if grep -q "nvidia-drm.modset=1" "$GRUB_DEFAULT"; then
+  sed -i "s/ nvidia-drm.modset=1//" "$GRUB_DEFAULT"
+  grub-install --target=x86_64-efi --efi-directory="$EFI_DIR" --bootloader-id=SnigdhaOS
+  grub-mkconfig -o "$GRUB_CFG"
+fi
+
+# Remove nvidia-drm.modset=1 from systemd-boot settings (if installed)
+if [ -d "$LOADER_ENTRIES_DIR" ]; then
+  PARAM="nvidia-drm.modset=1"
+  for file in "$LOADER_ENTRIES_DIR"*.conf; do
+    if grep -q "$PARAM" "$file"; then
+      sed -i "s/ $PARAM//" "$file"
+    fi
+  done
+fi
+
+# Write GRUB to bootloader
+echo "grub" | dd of="$BOOTLOADER"
+
 echo "End Snigdha OS Dkms Settings"
-echo
