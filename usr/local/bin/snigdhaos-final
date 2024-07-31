@@ -1,5 +1,5 @@
 #!/bin/bash
-# set -e
+set -e
 
 # Author            : Eshan Roy <eshan@snigdhaos.or>
 # Author URL        : https://eshanized.github.io/
@@ -8,64 +8,48 @@ echo
 echo "--->> Start snigdhaos-final <<---"
 echo
 
-echo
+# Set permissions
 echo "Permissions..."
-echo
-
 chmod 750 /etc/sudoers.d
 chmod 750 /etc/polkit-1/rules.d
-chgrm polkitd /etc/polkit-1/rules.d
+chown polkitd /etc/polkit-1/rules.d
 
-echo
+# Copy skeleton files to root
 echo "[Copy] /etc/skel -> /root"
-echo
-
 cp -aT /etc/skel/ /root/
 
-echo
+# Cleanup autologin
 echo "Cleanup autologin"
-echo
-
 rm -rfv /etc/systemd/system/getty@tty1.service.d
 
-echo
+# Set editor to nano
 echo "Setting editor -> nano"
-echo
+echo "EDITOR=nano" >> /etc/profile
 
-"EDITOR=nano" >> /etc/profile
-
-echo
+# Enhance Bluetooth
 echo "Enhance Bluetooth..."
-echo
-
 sed -i "s/#AutoEnable=false/AutoEnable=true/g" /etc/bluetooth/main.conf
 echo 'load-module module-switch-on-connect' | sudo tee --append /etc/pulse/default.pa
 
-echo
+# Cleanup original files
 echo "Cleanup original files..."
-echo
-
 rm -fv /etc/sudoers.d/g_wheel
 rm -fv /etc/polkit-1/rules.d/49-nopasswd_global.rules
 rm -v /root/{.automated_script.sh,.zlogin}
 mv -v /etc/snigdhaos-release /etc/lsb-release
 
-# If you are using systemd-boot
+# Install kernel-install-mkinitcpio if using systemd-boot
 if [ -f /boot/efi/loader/loader.conf ]; then
-    echo "Installing kernel-install-mkinitcpio..."
-    pacman -U --noconfirm /ur/local/bin/kernel-install-mkinitcpio-*-any.pkg.tar.zst
+  echo "Installing kernel-install-mkinitcpio..."
+  pacman -U --noconfirm /usr/local/bin/kernel-install-mkinitcpio-*-any.pkg.tar.zst
 fi
 
-echo
+# Set root permissions
 echo "Root Permission"
-echo
-
 chmod -v 700 /root
 
-echo
+# Run Snigdha OS Virtual-Machine-Check
 echo "Snigdha OS Virtual-Machine-Check"
-echo
-
 /usr/local/bin/snigdhaos-virtual-machine-check
 
 echo
