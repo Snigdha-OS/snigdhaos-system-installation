@@ -8,45 +8,30 @@ echo
 echo "--->> Start snigdhaos-fixes <<---"
 echo
 
+# Get the current desktop environment
 desktop=$(ls /usr/share/xsessions/)
-echo
-# shellcheck disable=SC2086
-echo "Your Current Desktop: "$desktop
-echo
 
-# Let's make some cases
+# Define a function to install and enable SDDM
+install_sddm() {
+  echo "INSTALLED: LightDM/GDM [STATUS: ACTIVE]"
+  pacman -S sddm --noconfirm --needed
+  systemctl enable sddm.service -f
+}
+
+# Check for specific desktop environments and install SDDM if necessary
 case $desktop in
-    ukui.desktop)
+  ukui.desktop|deepin.desktop)
     echo "Found : Lightm [STATUS: ACTIVE]"
-    pacman -S sddm --noconfirm --needed
-    systemctl enable sddm.service -f
-        ;;
-    deepin.desktop)
-    echo "Found : Lightm [STATUS: ACTIVE]"
-    pacman -S sddm --noconfirm --needed
-    systemctl enable sddm.service -f
-        ;;
-    *)
-    echo "Nothing To Do!!!"
+    install_sddm
+    ;;
+  *)
+    # Check for other desktop environments
+    if [ -f /usr/bin/gnome-session ] || [ -f /usr/bin/startdde ] || [ -f /usr/bin/ukui-session ]; then
+      install_sddm
+    else
+      echo "Nothing To Do!!!"
+    fi
 esac
-
-if [ -f /usr/bin/gnome-session ]; then
-    echo "INSTALLED: GDM [STATUS: ACTIVE]"
-    pacman -S sddm --noconfirm --needed
-    systemctl enable sddm.service -f
-fi
-
-if [ -f /usr/bin/startdde ]; then
-    echo "INSTALLED: LightDM [STATUS: ACTIVE]"
-    pacman -S sddm --noconfirm --needed
-    systemctl enable sddm.service -f
-fi 
-
-if [ -f /usr/bin/ukui-session ]; then
-    echo "INSTALLED: LightDM [STATUS: ACTIVE]"
-    pacman -S sddm --noconfirm --needed
-    systemctl enable sddm.service -f
-fi
 
 echo
 echo "--->> End snigdhaos-fixes <<---"
