@@ -1,23 +1,21 @@
 #!/bin/bash
+
 # set -e
 
 # Author            : Eshan Roy <eshan@snigdhaos.or>
 # Author URL        : https://eshanized.github.io/
 
-echo
-echo "--->> Start snigdhaos-displaymanager-check <<---"
-echo
-
-package=gdm
-if pacman -Qq $package > /dev/null; then
-    ln -sf /usr/lib/systemd/system/gdm.service /etc/systemd/display-manager.service
-fi
-
-package=sddm
-if pacman -Qq $package > /dev/null; then
-    ln -sf /usr/lib/systemd/system/sddm.service /etc/systemd/display-manager.service
-fi
 
 echo
-echo "--->> End snigdhaos-displaymanager-check <<---"
+echo "Start Execution..."
+echo
+
+for package in gdm sddm; do
+  if pacman -Qq $package > /dev/null; then
+    ln -sf /usr/lib/systemd/system/$package.service /etc/systemd/display-manager.service
+  fi
+done
+
+echo
+echo "End Execution!"
 echo
