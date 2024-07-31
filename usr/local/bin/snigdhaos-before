@@ -4,29 +4,22 @@
 # Author            : Eshan Roy <eshan@snigdhaos.or>
 # Author URL        : https://eshanized.github.io/
 
-echo
-echo "--->> Start snigdhaos-before <<---"
-echo
+echo "Starting Execution..."
 
-echo
+# Populate Developer Keys
 echo "Populating Developer Keys..."
-echo
-
 pacman-key --init
-pacman-key --populate snigdhaos
-pacman-key --populate archlinux
-pacman-key --populate chaotic
-echo
+pacman-key --populate snigdhaos archlinux chaotic
 
+# Copy Snigdha OS Grub Theme if not already done
 if [ ! -f /tmp/systemd-boot ]; then
-    echo "Copy Snigdha OS Grub Theme..."
-    mkdir -p /boot/grub/themes
-    cp -Rf /usr/share/grub/themes/snigdhaos-grub-theme /boot/grub/themes/
+  echo "Copy Snigdha OS Grub Theme..."
+  mkdir -p /boot/grub/themes
+  cp -Rf /usr/share/grub/themes/snigdhaos-grub-theme /boot/grub/themes/
 fi
 
-echo
+# Set Snigdha OS Arctic Preset
 echo "Setting Snigdha OS Arctic Preset..."
 mv -v /etc/mkinitcpio.d/snigdhaos /etc/mkinitcpio.d/linux.preset
-echo
-echo "--->> End snigdhaos-before <<---" 
-echo
+
+echo "End Execution!"
