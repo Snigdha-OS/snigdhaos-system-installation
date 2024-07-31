@@ -1,70 +1,53 @@
 #!/bin/bash
-echo
-echo "Changing Permissions..."
-echo 
 
-chmod 750 /etc/sudoers.d
-chmod 750 /etc/polkit-1/rules.d
-chgrp polkitd /etc/polkit-1/rules.d
+# Define a function to print a message with a blank line before and after
+print_message() {
+  echo
+  echo "$1"
+  echo
+}
 
-echo
-echo "Changed Permissions..."
-echo 
+# Define a function to handle errors
+handle_error() {
+  echo "Error: $1"
+  exit 1
+}
 
-echo
-echo "Copying /skel to /root..."
-echo 
+# Change permissions
+print_message "Changing Permissions..."
+chmod 750 /etc/sudoers.d || handle_error "Failed to change permissions for /etc/sudoers.d"
+chmod 750 /etc/polkit-1/rules.d || handle_error "Failed to change permissions for /etc/polkit-1/rules.d"
+chgrp polkitd /etc/polkit-1/rules.d || handle_error "Failed to change group for /etc/polkit-1/rules.d"
+print_message "Changed Permissions..."
 
-cp -aT /etc/skel/ /root/
+# Copy /skel to /root
+print_message "Copying /skel to /root..."
+cp -aT /etc/skel/ /root/ || handle_error "Failed to copy /skel to /root"
+print_message "Copied /skel to /root..."
 
-echo
-echo "Copied /skel to /root..."
-echo 
+# Remove Autologin
+print_message "Removing Autologin..."
+rm -rfv /etc/systemd/system/getty@tty1.service.d || handle_error "Failed to remove autologin"
+print_message "Removed Autologin..."
 
-echo
-echo "Removing Autologin..."
-echo 
+# Fix Bluetooth
+print_message "Fixing Bluetooth..."
+sed -i "s/#AutoEnable=false/AutoEnable=true/g" /etc/bluetooth/main.conf || handle_error "Failed to fix bluetooth"
+echo 'load-module module-switch-on-connect' | tee --append /etc/pulse/default.pa || handle_error "Failed to fix bluetooth"
+print_message "Fixed Bluetooth..."
 
-rm -rfv /etc/systemd/system/getty@tty1.service.d
+# Work on Snigdha OS Config
+print_message "Working on Snigdha OS Config..."
+rm -fv /etc/sudoers.d/g_wheel || handle_error "Failed to remove g_wheel"
+rm -fv /etc/polkit-1/rules.d/49-nopasswd_global.rules || handle_error "Failed to remove 49-nopasswd_global.rules"
+rm -v /root/{.automated_script.sh,.zlogin} || handle_error "Failed to remove automated script and zlogin"
+mv -v /etc/snigdhaos-release /etc/lsb-release || handle_error "Failed to move snigdhaos-release to lsb-release"
+print_message "Completed working on Snigdha OS Config..."
 
-echo
-echo "Removed Autologin..."
-echo 
+# Change root permission
+print_message "Change root permission..."
+chmod -v 700 /root || handle_error "Failed to change root permission"
+print_message "Changed root permission..."
 
-echo
-echo "Fixing Bluetooth..."
-echo
-
-sed -i "s/#AutoEnable=false/AutoEnable=true/g" /etc/bluetooth/main.conf
-echo 'load-module module-switch-on-connect' | tee --append /etc/pulse/default.pa
-
-echo
-echo "Fixed Bluetooth..."
-echo
-
-echo
-echo "Working on Snigdha OS Config..."
-echo
-
-rm -fv /etc/sudoers.d/g_wheel
-rm -fv /etc/polkit-1/rules.d/49-nopasswd_global.rules
-rm -v /root/{.automated_script.sh,.zlogin}
-mv -v /etc/snigdhaos-release /etc/lsb-release
-
-echo
-echo "Completed working on Snigdha OS Config..."
-echo
-
-echo
-echo "Change root permission..."
-echo
-
-chmod -v 700 /root
-
-echo
-echo "Changed root permission..."
-echo
-
-echo
-echo "Task Completed!"
-echo
+# Task Completed
+print_message "Task Completed!"
