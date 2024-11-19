@@ -4,35 +4,50 @@
 # Author            : Eshan Roy <eshan@snigdhaos.or>
 # Author URL        : https://eshanized.github.io/
 
-echo
-echo "--->> Start snigdhaos-fixes <<---"
-echo
+# Function to log messages
+log_message() {
+    echo "[INFO] $1"
+}
 
-# Get the current desktop environment
+# Function to log error messages
+log_error() {
+    echo "[ERROR] $1" >&2
+}
+
+log_message "--->> Start snigdhaos-fixes <<---"
+
+# Get the current desktop environment by listing sessions
 desktop=$(ls /usr/share/xsessions/)
 
 # Define a function to install and enable SDDM
 install_sddm() {
-  echo "INSTALLED: LightDM/GDM [STATUS: ACTIVE]"
-  pacman -S sddm --noconfirm --needed
-  systemctl enable sddm.service -f
+  # Check if SDDM is already installed
+  if ! pacman -Qq sddm > /dev/null; then
+    log_message "Installing SDDM..."
+    pacman -S sddm --noconfirm --needed
+  else
+    log_message "SDDM is already installed."
+  fi
+
+  log_message "Enabling SDDM service..."
+  systemctl enable sddm.service --force
 }
 
 # Check for specific desktop environments and install SDDM if necessary
 case $desktop in
   ukui.desktop|deepin.desktop)
-    echo "Found : Lightm [STATUS: ACTIVE]"
+    log_message "Found: UKUI or Deepin Desktop Environment [STATUS: ACTIVE]"
     install_sddm
     ;;
   *)
-    # Check for other desktop environments
+    # Check for GNOME or other environments that need SDDM
     if [ -f /usr/bin/gnome-session ] || [ -f /usr/bin/startdde ] || [ -f /usr/bin/ukui-session ]; then
+      log_message "Found: GNOME or UKUI Session [STATUS: ACTIVE]"
       install_sddm
     else
-      echo "Nothing To Do!!!"
+      log_message "No specific desktop environment found, nothing to do."
     fi
+    ;;
 esac
 
-echo
-echo "--->> End snigdhaos-fixes <<---"
-echo
+log_message "--->> End snigdhaos-fixes <<---"
