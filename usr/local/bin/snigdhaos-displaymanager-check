@@ -1,21 +1,42 @@
 #!/bin/bash
 
-# set -e
-
 # Author            : Eshan Roy <eshan@snigdhaos.or>
 # Author URL        : https://eshanized.github.io/
 
+# Function to log messages
+log_message() {
+    echo "[INFO] $1"
+}
 
+# Function to log error messages
+log_error() {
+    echo "[ERROR] $1" >&2
+}
+
+# Main Execution
 echo
-echo "Start Execution..."
+log_message "Start Execution..."
 echo
 
+# Loop through possible display managers
 for package in gdm sddm; do
   if pacman -Qq $package > /dev/null; then
-    ln -sf /usr/lib/systemd/system/$package.service /etc/systemd/display-manager.service
+    # Check if the symlink already exists
+    if [ -L /etc/systemd/display-manager.service ]; then
+      log_message "Symlink /etc/systemd/display-manager.service already exists. Skipping creation."
+    else
+      log_message "Setting $package as the default display manager."
+      if ln -sf /usr/lib/systemd/system/$package.service /etc/systemd/display-manager.service; then
+        log_message "$package service symlink created successfully."
+      else
+        log_error "Failed to create symlink for $package."
+        exit 1
+      fi
+    fi
+    # Break after the first valid package is found and processed
+    break
   fi
 done
 
-echo
-echo "End Execution!"
+log_message "End Execution!"
 echo
