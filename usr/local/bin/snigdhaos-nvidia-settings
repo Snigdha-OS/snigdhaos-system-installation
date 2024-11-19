@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 
 # Define constants
 MKINITCPIO_CONF="/etc/mkinitcpio.conf"
@@ -8,61 +9,94 @@ BOOTLOADER="/bootloader"
 EFI_DIR="/boot/efi"
 LOADER_ENTRIES_DIR="/boot/efi/loader/entries/"
 
+# Function to check if a required file exists
+check_file() {
+    local file=$1
+    if [ ! -f "$file" ]; then
+        echo "[ERROR] $file not found. Exiting."
+        exit 1
+    fi
+}
+
 # Check if required files exist
-if [ ! -f "$MKINITCPIO_CONF" ] || [ ! -f "$GRUB_DEFAULT" ]; then
-  echo "Required files not found. Exiting."
-  exit 1
-fi
+check_file "$MKINITCPIO_CONF"
+check_file "$GRUB_DEFAULT"
 
 # Check if NVIDIA driver is installed
 if ! pacman -Qq | grep -q "^nvidia"; then
-  echo "NVIDIA driver not installed. Exiting."
-  exit 1
+    echo "[ERROR] NVIDIA driver not installed. Exiting."
+    exit 1
 fi
 
 # Update mkinitcpio.conf
+echo "[INFO] Updating $MKINITCPIO_CONF with NVIDIA modules..."
 FIND='MODULES=""'
 REPLACE='MODULES="nvidia nvidia_modset nvidia_uvm nvidia_drm"'
 sed -i "s/$FIND/$REPLACE/g" "$MKINITCPIO_CONF"
 
-# Update GRUB settings
+# Update GRUB settings if necessary
 if ! grep -q "nvidia-drm.modset=1" "$GRUB_DEFAULT"; then
-  sed -i "/^GRUB_CMDLINE_LINUX_DEFAULT=/s/'$/ nvidia-drm.modset=1'/" "$GRUB_DEFAULT"
+    echo "[INFO] Adding 'nvidia-drm.modset=1' to $GRUB_DEFAULT..."
+    sed -i "/^GRUB_CMDLINE_LINUX_DEFAULT=/s/'$/ nvidia-drm.modset=1'/" "$GRUB_DEFAULT"
+else
+    echo "[INFO] 'nvidia-drm.modset=1' already set in $GRUB_DEFAULT."
 fi
 
 # Run mkinitcpio and update GRUB
+echo "[INFO] Running mkinitcpio..."
 mkinitcpio -P
+
+echo "[INFO] Running grub-install..."
 grub-install --target=x86_64-efi --efi-directory="$EFI_DIR" --bootloader-id=SnigdhaOS
+
+echo "[INFO] Regenerating GRUB config..."
 grub-mkconfig -o "$GRUB_CFG"
 
-# Update systemd-boot settings (if installed)
+# Update systemd-boot settings if installed
 if pacman -Qi snigdhaos-bootloader-systemd &> /dev/null; then
-  PARAM="nvidia-drm.modset=1"
-  for file in "$LOADER_ENTRIES_DIR"*.conf; do
-    if ! grep -q "$PARAM" "$file"; then
-      sed -i "^/options / s/options /&$PARAM /" "$file"
-    fi
-  done
+    echo "[INFO] Updating systemd-boot entries..."
+    PARAM="nvidia-drm.modset=1"
+    for file in "$LOADER_ENTRIES_DIR"*.conf; do
+        if ! grep -q "$PARAM" "$file"; then
+            echo "[INFO] Adding '$PARAM' to $file..."
+            sed -i "s|^/options|& $PARAM|" "$file"
+        else
+            echo "[INFO] '$PARAM' already set in $file."
+        fi
+    done
 fi
 
-# Remove nvidia-drm.modset=1 from GRUB settings
+# Remove nvidia-drm.modset=1 from GRUB settings if requested
 if grep -q "nvidia-drm.modset=1" "$GRUB_DEFAULT"; then
-  sed -i "s/ nvidia-drm.modset=1//" "$GRUB_DEFAULT"
-  grub-install --target=x86_64-efi --efi-directory="$EFI_DIR" --bootloader-id=SnigdhaOS
-  grub-mkconfig -o "$GRUB_CFG"
+    echo "[INFO] Removing 'nvidia-drm.modset=1' from $GRUB_DEFAULT..."
+    sed -i "s/ nvidia-drm.modset=1//" "$GRUB_DEFAULT"
+    grub-install --target=x86_64-efi --efi-directory="$EFI_DIR" --bootloader-id=SnigdhaOS
+    grub-mkconfig -o "$GRUB_CFG"
+else
+    echo "[INFO] 'nvidia-drm.modset=1' not found in $GRUB_DEFAULT, skipping removal."
 fi
 
-# Remove nvidia-drm.modset=1 from systemd-boot settings (if installed)
+# Remove nvidia-drm.modset=1 from systemd-boot settings if installed
 if [ -d "$LOADER_ENTRIES_DIR" ]; then
-  PARAM="nvidia-drm.modset=1"
-  for file in "$LOADER_ENTRIES_DIR"*.conf; do
-    if grep -q "$PARAM" "$file"; then
-      sed -i "s/ $PARAM//" "$file"
-    fi
-  done
+    echo "[INFO] Removing 'nvidia-drm.modset=1' from systemd-boot entries..."
+    PARAM="nvidia-drm.modset=1"
+    for file in "$LOADER_ENTRIES_DIR"*.conf; do
+        if grep -q "$PARAM" "$file"; then
+            echo "[INFO] Removing '$PARAM' from $file..."
+            sed -i "s/ $PARAM//" "$file"
+        else
+            echo "[INFO] '$PARAM' not found in $file, skipping."
+        fi
+    done
 fi
 
-# Write GRUB to bootloader
-echo "grub" | dd of="$BOOTLOADER"
+# Write GRUB to bootloader (make sure bootloader exists)
+if [ -d "$BOOTLOADER" ]; then
+    echo "[INFO] Writing GRUB to bootloader..."
+    echo "grub" | dd of="$BOOTLOADER"
+else
+    echo "[ERROR] Bootloader directory '$BOOTLOADER' not found. Skipping this step."
+    exit 1
+fi
 
-echo "End Snigdha OS Dkms Settings"
+echo "[INFO] End Snigdha OS Dkms Settings"
