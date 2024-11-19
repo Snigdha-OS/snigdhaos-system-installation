@@ -4,22 +4,60 @@
 # Author            : Eshan Roy <eshan@snigdhaos.or>
 # Author URL        : https://eshanized.github.io/
 
-echo "Starting Execution..."
+# Function to log messages
+log_message() {
+    echo "[INFO] $1"
+}
 
-# Populate Developer Keys
-echo "Populating Developer Keys..."
-pacman-key --init
-pacman-key --populate snigdhaos archlinux chaotic
+# Function to log error messages
+log_error() {
+    echo "[ERROR] $1" >&2
+}
+
+# Function to check for sudo privileges
+check_sudo() {
+    if ! sudo -v &>/dev/null; then
+        log_error "You need to have sudo privileges to run this script."
+        exit 1
+    fi
+}
+
+# Main Execution
+log_message "Starting Execution..."
+
+# Ensure sudo privileges are available
+check_sudo
+
+# Populate Developer Keys (with error handling)
+log_message "Populating Developer Keys..."
+if ! sudo pacman-key --init; then
+    log_error "Failed to initialize pacman keys."
+    exit 1
+fi
+
+if ! sudo pacman-key --populate snigdhaos archlinux chaotic; then
+    log_error "Failed to populate pacman keys."
+    exit 1
+fi
 
 # Copy Snigdha OS Grub Theme if not already done
+log_message "Checking if Snigdha OS Grub Theme is already copied..."
 if [ ! -f /tmp/systemd-boot ]; then
-  echo "Copy Snigdha OS Grub Theme..."
-  mkdir -p /boot/grub/themes
-  cp -Rf /usr/share/grub/themes/snigdhaos-grub-theme /boot/grub/themes/
+    log_message "Copying Snigdha OS Grub Theme..."
+    sudo mkdir -p /boot/grub/themes
+    if ! sudo cp -Rf /usr/share/grub/themes/snigdhaos-grub-theme /boot/grub/themes/; then
+        log_error "Failed to copy Snigdha OS Grub Theme."
+        exit 1
+    fi
+else
+    log_message "Snigdha OS Grub Theme already copied. Skipping."
 fi
 
 # Set Snigdha OS Arctic Preset
-echo "Setting Snigdha OS Arctic Preset..."
-mv -v /etc/mkinitcpio.d/snigdhaos /etc/mkinitcpio.d/linux.preset
+log_message "Setting Snigdha OS Arctic Preset..."
+if ! sudo mv -v /etc/mkinitcpio.d/snigdhaos /etc/mkinitcpio.d/linux.preset; then
+    log_error "Failed to set Snigdha OS Arctic Preset."
+    exit 1
+fi
 
-echo "End Execution!"
+log_message "End Execution!"
