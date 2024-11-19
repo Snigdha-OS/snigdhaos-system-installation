@@ -8,60 +8,73 @@ echo
 echo "--->> Start snigdhaos-fixes <<---"
 echo
 
+# Function to get a kernel parameter value, with a default if the parameter is not found
 get_kernel_param() {
     local param=$1
     local default=$2
     local value
 
+    # Extract the kernel parameter value, or use default if not found
     value=$(cat /proc/cmdline | tr ' ' '\n' | grep "^${param}=" | cut -d '=' -f 2-)
     echo "${value:-${default}}"
 }
 
+# Function to get the driver selection from the kernel parameters
 get_driver() {
     get_kernel_param driver
 }
 
+# Function to wait for pacman to become available if locked
 wait_for_pacman() {
     local timeout=30
     local interval=5
 
+    # Wait for pacman to finish operations if the database lock file exists
     while [ -e "/var/lib/pacman/db.lck" ]; do
-        echo "Pacman is not ready yet. Trying in ${interval} seconds."
+        echo "Pacman is not ready yet. Trying in ${interval} seconds..."
         sleep ${interval}
         ((timeout -= interval))
         if ((timeout <= 0)); then
-            echo "Snigdha OS Removing Pacman db.lck!"
-            rm /var/lib/pacman/db.lck
+            echo "[WARNING] Pacman is still locked after waiting ${timeout}s. Attempting to remove db.lck..."
+            rm /var/lib/pacman/db.lck || { echo "[ERROR] Failed to remove db.lck. Exiting."; exit 1; }
         fi
     done
 }
 
+# Get the kernel parameter 'driver' to determine which selection to use
 selection=$(get_driver)
 
 echo
 echo "Your Selection: ${selection}"
 echo
 
+# Handle different driver selection cases
 case ${selection} in
     free)
-        echo "Removing nvidia-dkms..."
-        pacman -Rns --noconfirm nvidia-dkms nvidia-utils nvidia-settings egl-wayland
-        cp /etc/calamares/settings-advanced-no-nvidia.conf /etc/calamares/settings-advanced.conf
+        echo "Removing NVIDIA DKMS and related packages..."
+        wait_for_pacman
+        pacman -Rns --noconfirm nvidia-dkms nvidia-utils nvidia-settings egl-wayland || { echo "[ERROR] Failed to remove NVIDIA packages."; exit 1; }
+        cp /etc/calamares/settings-advanced-no-nvidia.conf /etc/calamares/settings-advanced.conf || { echo "[ERROR] Failed to copy Calamares settings."; exit 1; }
+        echo "NVIDIA packages removed, and settings updated."
         ;;
     freenonouveau)
-        echo "Removing nvidia-dkms, nonouveau..."
-        pacman -Rns --noconfirm nvidia-dkms nvidia-utils nvidia-settings egl-wayland xf86-video-nouveau
-        cp /etc/calamares/settings-advanced-no-nvidia.conf /etc/calamares/settings-advanced.conf
+        echo "Removing NVIDIA DKMS, NVIDIA utilities, and Nouveau..."
+        wait_for_pacman
+        pacman -Rns --noconfirm nvidia-dkms nvidia-utils nvidia-settings egl-wayland xf86-video-nouveau || { echo "[ERROR] Failed to remove NVIDIA and Nouveau packages."; exit 1; }
+        cp /etc/calamares/settings-advanced-no-nvidia.conf /etc/calamares/settings-advanced.conf || { echo "[ERROR] Failed to copy Calamares settings."; exit 1; }
+        echo "NVIDIA and Nouveau packages removed, and settings updated."
         ;;
     nonfree)
-        echo "Keep nvidia and nonouveau"
+        echo "Keeping NVIDIA and Nouveau packages."
         ;;
     nonfreenonouveau)
-        echo "Keep nvidia-dkms; removing nonouveau"
-        pacman -Rns --noconfirm xf86-video-nouveau
+        echo "Keeping NVIDIA DKMS; removing Nouveau."
+        wait_for_pacman
+        pacman -Rns --noconfirm xf86-video-nouveau || { echo "[ERROR] Failed to remove Nouveau package."; exit 1; }
+        echo "Nouveau package removed."
         ;;
     *)
-        echo "Invalid selection: ${selection}"
+        echo "[ERROR] Invalid selection: ${selection}. Exiting."
         exit 1
         ;;
 esac
