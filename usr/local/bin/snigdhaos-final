@@ -4,54 +4,88 @@ set -e
 # Author            : Eshan Roy <eshan@snigdhaos.or>
 # Author URL        : https://eshanized.github.io/
 
-echo
-echo "--->> Start snigdhaos-final <<---"
-echo
+# Function to log messages
+log_message() {
+    echo "[INFO] $1"
+}
+
+# Function to log error messages
+log_error() {
+    echo "[ERROR] $1" >&2
+}
+
+log_message "--->> Start snigdhaos-final <<---"
 
 # Set permissions
-echo "Permissions..."
-chmod 750 /etc/sudoers.d
-chmod 750 /etc/polkit-1/rules.d
-chown polkitd /etc/polkit-1/rules.d
+log_message "Setting permissions..."
+chmod 750 /etc/sudoers.d && log_message "Set /etc/sudoers.d permissions."
+chmod 750 /etc/polkit-1/rules.d && log_message "Set /etc/polkit-1/rules.d permissions."
+chown polkitd /etc/polkit-1/rules.d && log_message "Changed owner of /etc/polkit-1/rules.d to polkitd."
 
 # Copy skeleton files to root
-echo "[Copy] /etc/skel -> /root"
-cp -aT /etc/skel/ /root/
+log_message "[Copy] /etc/skel -> /root"
+if cp -aT /etc/skel/ /root/; then
+    log_message "Successfully copied /etc/skel/ to /root."
+else
+    log_error "Failed to copy skeleton files."
+    exit 1
+fi
 
 # Cleanup autologin
-echo "Cleanup autologin"
-rm -rfv /etc/systemd/system/getty@tty1.service.d
+log_message "Cleaning up autologin..."
+if rm -rfv /etc/systemd/system/getty@tty1.service.d; then
+    log_message "Autologin cleanup complete."
+else
+    log_error "Failed to remove autologin files."
+    exit 1
+fi
 
 # Set editor to nano
-echo "Setting editor -> nano"
-echo "EDITOR=nano" >> /etc/profile
+log_message "Setting editor to nano..."
+echo "EDITOR=nano" >> /etc/profile && log_message "Set default editor to nano."
 
 # Enhance Bluetooth
-echo "Enhance Bluetooth..."
-sed -i "s/#AutoEnable=false/AutoEnable=true/g" /etc/bluetooth/main.conf
-echo 'load-module module-switch-on-connect' | sudo tee --append /etc/pulse/default.pa
+log_message "Enhancing Bluetooth..."
+if sed -i "s/#AutoEnable=false/AutoEnable=true/g" /etc/bluetooth/main.conf; then
+    log_message "Bluetooth AutoEnable enabled."
+else
+    log_error "Failed to enable Bluetooth AutoEnable."
+    exit 1
+fi
+
+echo 'load-module module-switch-on-connect' | sudo tee --append /etc/pulse/default.pa && log_message "Added module-switch-on-connect to PulseAudio config."
 
 # Cleanup original files
-echo "Cleanup original files..."
-rm -fv /etc/sudoers.d/g_wheel
-rm -fv /etc/polkit-1/rules.d/49-nopasswd_global.rules
-rm -v /root/{.automated_script.sh,.zlogin}
-mv -v /etc/snigdhaos-release /etc/lsb-release
+log_message "Cleaning up original files..."
+rm -fv /etc/sudoers.d/g_wheel && log_message "Removed /etc/sudoers.d/g_wheel."
+rm -fv /etc/polkit-1/rules.d/49-nopasswd_global.rules && log_message "Removed /etc/polkit-1/rules.d/49-nopasswd_global.rules."
+rm -v /root/{.automated_script.sh,.zlogin} && log_message "Removed original root files."
+mv -v /etc/snigdhaos-release /etc/lsb-release && log_message "Renamed /etc/snigdhaos-release to /etc/lsb-release."
 
 # Install kernel-install-mkinitcpio if using systemd-boot
 if [ -f /boot/efi/loader/loader.conf ]; then
-  echo "Installing kernel-install-mkinitcpio..."
-  pacman -U --noconfirm /usr/local/bin/kernel-install-mkinitcpio-*-any.pkg.tar.zst
+  log_message "Installing kernel-install-mkinitcpio..."
+  if pacman -U --noconfirm /usr/local/bin/kernel-install-mkinitcpio-*-any.pkg.tar.zst; then
+    log_message "Successfully installed kernel-install-mkinitcpio."
+  else
+    log_error "Failed to install kernel-install-mkinitcpio."
+    exit 1
+  fi
+else
+  log_message "System not using systemd-boot. Skipping kernel-install-mkinitcpio installation."
 fi
 
 # Set root permissions
-echo "Root Permission"
-chmod -v 700 /root
+log_message "Setting root permissions..."
+chmod -v 700 /root && log_message "Set root directory permissions to 700."
 
 # Run Snigdha OS Virtual-Machine-Check
-echo "Snigdha OS Virtual-Machine-Check"
-/usr/local/bin/snigdhaos-virtual-machine-check
+log_message "Running Snigdha OS Virtual-Machine-Check..."
+if /usr/local/bin/snigdhaos-virtual-machine-check; then
+    log_message "Virtual machine check completed successfully."
+else
+    log_error "Virtual machine check failed."
+    exit 1
+fi
 
-echo
-echo "End!!!"
-echo
+log_message "End!!!"
