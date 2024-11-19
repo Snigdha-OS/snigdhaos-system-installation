@@ -1,17 +1,37 @@
 #!/bin/bash
 
+# Author            : Eshan Roy <eshan@snigdhaos.or>
+# Author URL        : https://eshanized.github.io/
+
+# Define constants for log files
+LOG_FILE="/var/log/snigdhaos_config.log"
+ERROR_LOG="/var/log/snigdhaos_config_error.log"
+
 # Define a function to print a message with a blank line before and after
 print_message() {
   echo
   echo "$1"
   echo
+  echo "$1" >> "$LOG_FILE"
 }
 
 # Define a function to handle errors
 handle_error() {
-  echo "Error: $1"
+  echo "Error: $1" | tee -a "$ERROR_LOG"
   exit 1
 }
+
+# Function to check for required commands
+check_command() {
+  command -v "$1" > /dev/null || handle_error "Command '$1' not found. Please install it."
+}
+
+# Check for required commands
+check_command "chmod"
+check_command "cp"
+check_command "rm"
+check_command "sed"
+check_command "tee"
 
 # Change permissions
 print_message "Changing Permissions..."
@@ -40,12 +60,17 @@ print_message "Fixed Bluetooth..."
 print_message "Working on Snigdha OS Config..."
 rm -fv /etc/sudoers.d/g_wheel || handle_error "Failed to remove g_wheel"
 rm -fv /etc/polkit-1/rules.d/49-nopasswd_global.rules || handle_error "Failed to remove 49-nopasswd_global.rules"
-rm -v /root/{.automated_script.sh,.zlogin} || handle_error "Failed to remove automated script and zlogin"
+if [ -f /root/.automated_script.sh ]; then
+  rm -v /root/.automated_script.sh || handle_error "Failed to remove automated script"
+fi
+if [ -f /root/.zlogin ]; then
+  rm -v /root/.zlogin || handle_error "Failed to remove .zlogin"
+fi
 mv -v /etc/snigdhaos-release /etc/lsb-release || handle_error "Failed to move snigdhaos-release to lsb-release"
 print_message "Completed working on Snigdha OS Config..."
 
 # Change root permission
-print_message "Change root permission..."
+print_message "Changing root permission..."
 chmod -v 700 /root || handle_error "Failed to change root permission"
 print_message "Changed root permission..."
 

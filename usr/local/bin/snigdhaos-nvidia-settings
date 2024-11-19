@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Author            : Eshan Roy <eshan@snigdhaos.or>
+# Author URL        : https://eshanized.github.io/
+
 # Define constants
 MKINITCPIO_CONF="/etc/mkinitcpio.conf"
 GRUB_DEFAULT="/etc/default/grub"
